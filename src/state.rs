@@ -108,13 +108,34 @@ impl WgpuState {
         };
         self.surface.configure(&self.device, &surface_config);
     }
+    fn reconfigure_compute_texture(&mut self) {
+        
+        self.compute_texture_size = wgpu::Extent3d {
+            width: self.size.width,
+            height: self.size.height,
 
+            depth_or_array_layers: 1,
+        };
+
+        self.compute_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            size: self.compute_texture_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::STORAGE_BINDING,
+            label: Some("color_buffer"),
+            view_formats: &[],
+        });
+
+    } 
     pub fn rewrite_world_data(&mut self, world_data: WorldData) {
         self.queue
             .write_buffer(&self.world_uniform, 0, bytemuck::cast_slice(&[world_data]));
     }
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
+        self.reconfigure_compute_texture();
         self.configure_surface();
     }
 
